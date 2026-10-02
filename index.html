@@ -138,8 +138,12 @@ button:hover{
 }
 
 canvas{
+     width:100%;
+     height:650px;
+     cursor:grab;
+     touch-action:none;
     width:100%;
-    height:auto;
+    height:650px;
     display:block;
 }
 
@@ -652,1642 +656,393 @@ Bắc phải – Nam trái
 </div>
 
 
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-
-/* =====================================================
-   CANVAS
-===================================================== */
-
-const canvas =
-document.getElementById("canvas");
-
-const ctx =
-canvas.getContext("2d");
-
-const W=900;
-const H=650;
-
-const cx=450;
-const cy=325;
-const R=245;
-
-
-/* =====================================================
-   CONTROLS
-===================================================== */
-
-const select =
-document.getElementById("caseSelect");
-
-const startBtn =
-document.getElementById("startBtn");
-
-const pauseBtn =
-document.getElementById("pauseBtn");
-
-const answerBtn =
-document.getElementById("answerBtn");
-
-const resetBtn =
-document.getElementById("resetBtn");
-
-const speed =
-document.getElementById("speed");
-
-const speedText =
-document.getElementById("speedText");
-
-const info =
-document.getElementById("info");
-
-const answer =
-document.getElementById("answer");
-
-const answerText =
-document.getElementById("answerText");
-
-
-/* =====================================================
-   ANIMATION
-===================================================== */
-
-let progress=0;
-
-let running=false;
-
-let lastTime=0;
-
-let animationID=null;
-
-
-/* =====================================================
-   DATA
-
-   start:
-   điểm xuất phát
-
-   initial:
-   hướng ban đầu – NÉT ĐỨT
-
-   final:
-   hướng sau khi lệch – NÉT LIỀN
-===================================================== */
-
-const cases={
-
-AB:{
-
-name:"A → B / B′",
-
-hemisphere:"Bán cầu Bắc",
-
-start:{x:350,y:350},
-
-initial:{x:410,y:292},
-
-final:{x:440,y:325},
-
-startLabel:"A",
-
-initialLabel:"B",
-
-finalLabel:"B′"
-
-},
-
-
-CD:{
-
-name:"C → D / D′",
-
-hemisphere:"Bán cầu Bắc",
-
-start:{x:535,y:275},
-
-initial:{x:552,y:382},
-
-final:{x:518,y:385},
-
-startLabel:"C",
-
-initialLabel:"D",
-
-finalLabel:"D′"
-
-},
-
-
-OP:{
-
-name:"O → P / P′",
-
-hemisphere:"Bán cầu Nam",
-
-start:{x:350,y:415},
-
-initial:{x:320,y:505},
-
-final:{x:355,y:505},
-
-startLabel:"O",
-
-initialLabel:"P",
-
-finalLabel:"P′"
-
-},
-
-
-MN:{
-
-name:"M → N / N′",
-
-hemisphere:"Bán cầu Nam",
-
-start:{x:575,y:505},
-
-initial:{x:630,y:420},
-
-final:{x:585,y:420},
-
-startLabel:"M",
-
-initialLabel:"N",
-
-finalLabel:"N′"
-
+const canvas = document.getElementById("canvas");
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(canvas.clientWidth || 900, canvas.clientHeight || 650, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.setClearColor(0xeaf8fc, 1);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xeaf8fc, 7, 13);
+
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+camera.position.set(0, 1.15, 6.9);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.075;
+controls.enablePan = false;
+controls.minDistance = 4.7;
+controls.maxDistance = 9.5;
+controls.rotateSpeed = 0.65;
+controls.zoomSpeed = 0.85;
+controls.target.set(0,0,0);
+controls.autoRotate = false;
+
+const ambient = new THREE.HemisphereLight(0xffffff, 0x497b8a, 2.2);
+scene.add(ambient);
+
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+keyLight.position.set(-4,5,6);
+scene.add(keyLight);
+
+const fillLight = new THREE.DirectionalLight(0x9bd8ff, 1.0);
+fillLight.position.set(5,-2,3);
+scene.add(fillLight);
+
+const R = 2.45;
+const earthGroup = new THREE.Group();
+scene.add(earthGroup);
+
+function makeEarthTexture(){
+  const c=document.createElement("canvas");
+  c.width=1400; c.height=700;
+  const x=c.getContext("2d");
+
+  const g=x.createLinearGradient(0,0,0,700);
+  g.addColorStop(0,"#0d6f9e");
+  g.addColorStop(.45,"#31a9cf");
+  g.addColorStop(1,"#0a587d");
+  x.fillStyle=g; x.fillRect(0,0,1400,700);
+
+  // Stylized continents. The original code also used schematic land shapes;
+  // these are deliberately illustrative rather than geographic data.
+  const shapes=[
+    [[130,155],[235,105],[335,135],[385,215],[335,280],[250,270],[185,225]],
+    [[440,120],[540,90],[625,145],[650,220],[580,270],[500,245],[450,190]],
+    [[700,180],[800,150],[915,205],[980,300],[930,355],[820,320],[750,255]],
+    [[350,285],[430,310],[455,405],[410,485],[345,440],[325,360]],
+    [[555,335],[650,350],[690,440],[650,530],[570,505],[530,410]],
+    [[810,400],[920,390],[1000,455],[970,535],[865,520],[795,455]],
+    [[465,515],[545,505],[585,575],[535,635],[455,610],[420,560]]
+  ];
+  const lg=x.createLinearGradient(0,100,0,650);
+  lg.addColorStop(0,"#dfe77b");
+  lg.addColorStop(.55,"#c9cf5d");
+  lg.addColorStop(1,"#a7b94d");
+
+  for(const pts of shapes){
+    x.beginPath();
+    pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));
+    x.closePath();
+    x.fillStyle=lg; x.fill();
+    x.strokeStyle="rgba(90,100,35,.65)"; x.lineWidth=2; x.stroke();
+  }
+
+  // Latitude/longitude texture lines.
+  x.strokeStyle="rgba(210,245,255,.22)";
+  x.lineWidth=1;
+  for(let i=0;i<=14;i++){
+    const px=i*100;
+    x.beginPath(); x.ellipse(px-40,350,Math.max(40,Math.abs(px-700)*.22),350,0,0,Math.PI*2); x.stroke();
+  }
+  for(let i=1;i<7;i++){
+    const py=i*100;
+    const w=Math.sqrt(Math.max(0,700*700-(py-350)*(py-350)));
+    x.beginPath(); x.ellipse(700,py,w,Math.max(20,w*.17),0,0,Math.PI*2); x.stroke();
+  }
+
+  return new THREE.CanvasTexture(c);
 }
 
-};
-
-
-/* =====================================================
-   BACKGROUND
-===================================================== */
-
-function drawBackground(){
-
-ctx.clearRect(0,0,W,H);
-
-const bg=
-ctx.createRadialGradient(
-350,180,20,
-450,325,650
-);
-
-bg.addColorStop(
-0,
-"#ffffff"
-);
-
-bg.addColorStop(
-.65,
-"#eefaff"
-);
-
-bg.addColorStop(
-1,
-"#d7edf3"
-);
-
-ctx.fillStyle=bg;
-
-ctx.fillRect(
-0,0,W,H
-);
-
-}
-
-
-/* =====================================================
-   EARTH
-===================================================== */
-
-function drawEarth(){
-
-/* shadow */
-
-ctx.beginPath();
-
-ctx.ellipse(
-cx+20,
-cy+R+18,
-R*.7,
-17,
-0,
-0,
-Math.PI*2
-);
-
-ctx.fillStyle=
-"rgba(20,70,90,.15)";
-
-ctx.fill();
-
-
-/* sphere */
-
-const earth=
-ctx.createRadialGradient(
-cx-100,
-cy-120,
-15,
-cx+30,
-cy+40,
-R*1.15
-);
-
-earth.addColorStop(
-0,
-"#f3fdff"
-);
-
-earth.addColorStop(
-.25,
-"#bdebf7"
-);
-
-earth.addColorStop(
-.55,
-"#64c2df"
-);
-
-earth.addColorStop(
-.85,
-"#2b91b6"
-);
-
-earth.addColorStop(
-1,
-"#155f80"
-);
-
-ctx.beginPath();
-
-ctx.arc(
-cx,
-cy,
-R,
-0,
-Math.PI*2
-);
-
-ctx.fillStyle=earth;
-
-ctx.fill();
-
-
-/* clip */
-
-ctx.save();
-
-ctx.beginPath();
-
-ctx.arc(
-cx,
-cy,
-R-2,
-0,
-Math.PI*2
-);
-
-ctx.clip();
-
-
-drawGrid();
-
-drawLand();
-
-
-ctx.restore();
-
-
-/* border */
-
-ctx.beginPath();
-
-ctx.arc(
-cx,
-cy,
-R,
-0,
-Math.PI*2
-);
-
-ctx.strokeStyle="#087ca5";
-
-ctx.lineWidth=3;
-
-ctx.stroke();
-
-
-drawAxis();
-
-drawDirections();
-
-drawRotation();
-
-}
-
-
-/* =====================================================
-   GRID
-===================================================== */
-
-function drawGrid(){
-
-ctx.save();
-
-ctx.strokeStyle=
-"rgba(10,104,137,.35)";
-
-ctx.lineWidth=1;
-
-
-/* meridians */
-
-for(
-let x=-190;
-x<=190;
-x+=48
-){
-
-ctx.beginPath();
-
-ctx.ellipse(
-cx+x*.25,
-cy,
-Math.max(
-30,
-Math.sqrt(
-Math.max(
-0,
-R*R-x*x
-)
-)
-),
-R,
-0,
-0,
-Math.PI*2
-);
-
-ctx.stroke();
-
-}
-
-
-/* parallels */
-
-for(
-let y=-165;
-y<=165;
-y+=55
-){
-
-const width=
-Math.sqrt(
-Math.max(
-0,
-R*R-y*y
-)
-);
-
-ctx.beginPath();
-
-ctx.ellipse(
-cx,
-cy+y,
-width,
-Math.max(
-18,
-width*.20
-),
-0,
-0,
-Math.PI*2
-);
-
-ctx.stroke();
-
-}
-
-
-/* equator */
-
-ctx.beginPath();
-
-ctx.ellipse(
-cx,
-cy,
-R,
-50,
-0,
-0,
-Math.PI*2
-);
-
-ctx.strokeStyle=
-"rgba(5,87,117,.75)";
-
-ctx.lineWidth=2;
-
-ctx.stroke();
-
-ctx.restore();
-
-}
-
-
-/* =====================================================
-   LAND
-===================================================== */
-
-function drawLand(){
-
-const landShapes=[
-
-[
-[280,190],
-[320,165],
-[370,175],
-[395,210],
-[375,245],
-[330,250],
-[295,225]
-],
-
-[
-[430,165],
-[485,145],
-[535,170],
-[558,210],
-[540,245],
-[490,255],
-[450,225]
-],
-
-[
-[555,255],
-[600,235],
-[650,270],
-[680,320],
-[650,345],
-[600,325],
-[570,290]
-],
-
-[
-[370,270],
-[410,290],
-[420,350],
-[390,395],
-[350,370],
-[340,320]
-],
-
-[
-[470,330],
-[520,345],
-[535,395],
-[510,440],
-[465,425],
-[445,380]
-],
-
-[
-[570,390],
-[630,385],
-[675,425],
-[650,470],
-[590,455],
-[560,425]
-],
-
-[
-[410,470],
-[455,465],
-[480,500],
-[450,535],
-[405,520],
-[385,490]
-]
-
-];
-
-
-landShapes.forEach(
-shape=>{
-
-ctx.beginPath();
-
-shape.forEach(
-(p,i)=>{
-
-if(i===0)
-ctx.moveTo(p[0],p[1]);
-else
-ctx.lineTo(p[0],p[1]);
-
+const earthMat = new THREE.MeshPhongMaterial({
+  map: makeEarthTexture(),
+  shininess: 16,
+  specular: 0x4c9bb6
 });
+const earth = new THREE.Mesh(new THREE.SphereGeometry(R, 96, 64), earthMat);
+earthGroup.add(earth);
 
-ctx.closePath();
-
-const grad=
-ctx.createLinearGradient(
-0,150,
-0,540
+// Subtle atmosphere.
+const atmosphere = new THREE.Mesh(
+  new THREE.SphereGeometry(R*1.035, 64, 48),
+  new THREE.MeshBasicMaterial({
+    color:0x65cfff,
+    transparent:true,
+    opacity:.13,
+    side:THREE.BackSide,
+    blending:THREE.AdditiveBlending
+  })
 );
+earthGroup.add(atmosphere);
 
-grad.addColorStop(
-0,
-"#f5df72"
+// 23.5° axial tilt.
+earthGroup.rotation.z = THREE.MathUtils.degToRad(23.5);
+
+// Axis.
+const axisMat = new THREE.LineBasicMaterial({color:0x087ca5, transparent:true, opacity:.9});
+const axisGeo = new THREE.BufferGeometry().setFromPoints([
+  new THREE.Vector3(0,-3.05,0),
+  new THREE.Vector3(0, 3.05,0)
+]);
+earthGroup.add(new THREE.Line(axisGeo, axisMat));
+
+function makeTextSprite(text, color="#c73838", size=54){
+  const c=document.createElement("canvas");
+  c.width=512; c.height=128;
+  const x=c.getContext("2d");
+  x.font=`bold ${size}px Arial`;
+  x.textAlign="center"; x.textBaseline="middle";
+  x.fillStyle=color; x.fillText(text,256,64);
+  const tex=new THREE.CanvasTexture(c);
+  const mat=new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false});
+  const sp=new THREE.Sprite(mat);
+  sp.scale.set(1.65,.42,1);
+  return sp;
+}
+const northLabel=makeTextSprite("CỰC BẮC");
+northLabel.position.set(0,3.25,0);
+earthGroup.add(northLabel);
+const southLabel=makeTextSprite("CỰC NAM");
+southLabel.position.set(0,-3.25,0);
+earthGroup.add(southLabel);
+
+const rotationArrowGroup = new THREE.Group();
+earthGroup.add(rotationArrowGroup);
+
+const ring = new THREE.Mesh(
+  new THREE.TorusGeometry(2.95, .018, 8, 128, Math.PI*0.72),
+  new THREE.MeshBasicMaterial({color:0x087ca5, transparent:true, opacity:.9})
 );
+ring.rotation.x = Math.PI/2;
+ring.rotation.z = THREE.MathUtils.degToRad(25);
+rotationArrowGroup.add(ring);
 
-grad.addColorStop(
-1,
-"#d5bb4f"
-);
-
-ctx.fillStyle=grad;
-
-ctx.fill();
-
-ctx.strokeStyle=
-"rgba(120,105,30,.6)";
-
-ctx.stroke();
-
-});
-
+function latLon(lat,lon,r=R+.08){
+  const a=THREE.MathUtils.degToRad(lat);
+  const b=THREE.MathUtils.degToRad(lon);
+  return new THREE.Vector3(
+    r*Math.cos(a)*Math.sin(b),
+    r*Math.sin(a),
+    r*Math.cos(a)*Math.cos(b)
+  );
 }
 
-
-/* =====================================================
-   AXIS
-===================================================== */
-
-function drawAxis(){
-
-ctx.save();
-
-ctx.strokeStyle="#087ca5";
-
-ctx.lineWidth=3;
-
-ctx.beginPath();
-
-ctx.moveTo(
-cx-40,
-cy-R-40
-);
-
-ctx.lineTo(
-cx+40,
-cy+R+40
-);
-
-ctx.stroke();
-
-
-ctx.fillStyle="#087ca5";
-
-ctx.beginPath();
-
-ctx.moveTo(
-cx-40,
-cy-R-40
-);
-
-ctx.lineTo(
-cx-27,
-cy-R-26
-);
-
-ctx.lineTo(
-cx-48,
-cy-R-30
-);
-
-ctx.closePath();
-
-ctx.fill();
-
-
-ctx.font="italic bold 15px Georgia";
-
-ctx.fillStyle="#c73838";
-
-ctx.fillText(
-"Cực Bắc",
-cx+4,
-cy-R-22
-);
-
-ctx.fillText(
-"Cực Nam",
-cx-95,
-cy+R+35
-);
-
-ctx.restore();
-
-}
-
-
-/* =====================================================
-   DIRECTIONS
-===================================================== */
-
-function drawDirections(){
-
-ctx.save();
-
-ctx.font="bold 19px Georgia";
-
-ctx.fillStyle="#c73737";
-
-ctx.textAlign="center";
-
-ctx.fillText(
-"BẮC",
-cx,
-28
-);
-
-ctx.fillText(
-"NAM",
-cx,
-H-18
-);
-
-ctx.fillText(
-"TÂY",
-65,
-cy
-);
-
-ctx.fillText(
-"ĐÔNG",
-W-58,
-cy
-);
-
-ctx.restore();
-
-}
-
-
-/* =====================================================
-   ROTATION ARROW
-===================================================== */
-
-function drawRotation(){
-
-ctx.save();
-
-ctx.strokeStyle="#087ca5";
-
-ctx.lineWidth=3;
-
-ctx.beginPath();
-
-ctx.arc(
-cx+15,
-cy-15,
-R+30,
-rad(215),
-rad(310)
-);
-
-ctx.stroke();
-
-const a=
-rad(310);
-
-const x=
-cx+15+(R+30)*Math.cos(a);
-
-const y=
-cy-15+(R+30)*Math.sin(a);
-
-ctx.fillStyle="#087ca5";
-
-ctx.beginPath();
-
-ctx.moveTo(x,y);
-
-ctx.lineTo(
-x-16,
-y+1
-);
-
-ctx.lineTo(
-x-7,
-y+14
-);
-
-ctx.closePath();
-
-ctx.fill();
-
-ctx.font="bold 13px Arial";
-
-ctx.fillText(
-"Tây → Đông",
-cx+180,
-cy-R+18
-);
-
-ctx.restore();
-
-}
-
-
-/* =====================================================
-   DEGREE
-===================================================== */
-
-function rad(deg){
-
-return deg*Math.PI/180;
-
-}
-
-
-/* =====================================================
-   DRAW ARROW
-===================================================== */
-
-function drawArrow(
-start,
-end,
-amount,
-dashed
-){
-
-const x=
-start.x+
-(end.x-start.x)*
-amount;
-
-const y=
-start.y+
-(end.y-start.y)*
-amount;
-
-
-ctx.save();
-
-ctx.beginPath();
-
-ctx.moveTo(
-start.x,
-start.y
-);
-
-ctx.lineTo(
-x,
-y
-);
-
-ctx.strokeStyle="#e13e37";
-
-ctx.lineWidth=
-dashed ? 3 : 4;
-
-ctx.setLineDash(
-dashed ? [9,7] : []
-);
-
-ctx.lineCap="round";
-
-ctx.stroke();
-
-
-if(amount>0.03){
-
-const angle=
-Math.atan2(
-y-start.y,
-x-start.x
-);
-
-const size=
-dashed ? 12 : 14;
-
-ctx.fillStyle="#e13e37";
-
-ctx.beginPath();
-
-ctx.moveTo(
-x,
-y
-);
-
-ctx.lineTo(
-x-size*Math.cos(angle-.5),
-y-size*Math.sin(angle-.5)
-);
-
-ctx.lineTo(
-x-size*Math.cos(angle+.5),
-y-size*Math.sin(angle+.5)
-);
-
-ctx.closePath();
-
-ctx.fill();
-
-}
-
-ctx.restore();
-
-}
-
-
-/* =====================================================
-   CURVED MOVEMENT
-===================================================== */
-
-/*
-   Đây là phần quan trọng nhất.
-
-   Vật thể KHÔNG nhảy thẳng từ A đến B′.
-
-   Nó sẽ:
-   
-   1. Xuất phát tại A.
-   2. Di chuyển gần theo hướng ban đầu.
-   3. Dần dần lệch.
-   4. Kết thúc tại B′.
-
-*/
-
-function getMovingPoint(data,t){
-
-/*
-   Đường cong Bézier bậc 2.
-
-   P0 = điểm xuất phát
-   P1 = điểm trung gian theo hướng ban đầu
-   P2 = điểm cuối sau khi lệch
-*/
-
-const P0=data.start;
-
-const P2=data.final;
-
-
-/* vector ban đầu */
-
-const dx=
-data.initial.x-data.start.x;
-
-const dy=
-data.initial.y-data.start.y;
-
-
-/* điểm điều khiển */
-
-const P1={
-x:
-data.start.x+
-dx*0.75,
-
-y:
-data.start.y+
-dy*0.75
+const DATA={
+  AB:{hemisphere:"Bán cầu Bắc",start:[35,-55],turn:[35,-15],final:[35,22],labels:["A","B","B′"],direction:"right"},
+  CD:{hemisphere:"Bán cầu Bắc",start:[15,50],turn:[15,15],final:[12,-22],labels:["C","D","D′"],direction:"right"},
+  OP:{hemisphere:"Bán cầu Nam",start:[-35,-35],turn:[-35,5],final:[-35,42],labels:["O","P","P′"],direction:"left"},
+  MN:{hemisphere:"Bán cầu Nam",start:[-15,55],turn:[-15,15],final:[-18,-25],labels:["M","N","N′"],direction:"left"}
 };
 
+const pathGroup=new THREE.Group();
+earthGroup.add(pathGroup);
+let currentObjects=[];
+let progress=0, running=false, lastTime=0, animationID=null;
 
-/* quadratic Bezier */
-
-const x=
-(1-t)*(1-t)*P0.x+
-2*(1-t)*t*P1.x+
-t*t*P2.x;
-
-const y=
-(1-t)*(1-t)*P0.y+
-2*(1-t)*t*P1.y+
-t*t*P2.y;
-
-
-return {
-x:x,
-y:y
-};
-
+function clearCaseObjects(){
+  currentObjects.forEach(o=>{
+    pathGroup.remove(o);
+    o.traverse?.(n=>{
+      if(n.geometry) n.geometry.dispose();
+      if(n.material){
+        if(Array.isArray(n.material)) n.material.forEach(m=>m.dispose());
+        else n.material.dispose();
+      }
+    });
+  });
+  currentObjects=[];
 }
 
+function addObj(o){ pathGroup.add(o); currentObjects.push(o); return o; }
 
-/* =====================================================
-   DRAW CURVED TRAIL
-===================================================== */
-
-function drawMovingTrail(
-data,
-t
-){
-
-if(t<=0)
-return;
-
-
-/*
-   Vẽ đường cong từ đầu
-   tới vị trí hiện tại.
-*/
-
-ctx.save();
-
-ctx.beginPath();
-
-for(
-let i=0;
-i<=100*t;
-i++
-){
-
-const tt=
-i/100;
-
-const p=
-getMovingPoint(
-data,
-tt
-);
-
-if(i===0)
-ctx.moveTo(
-p.x,
-p.y
-);
-else
-ctx.lineTo(
-p.x,
-p.y
-);
-
+function addPointLabel(pos,text){
+  const group=new THREE.Group();
+  const dot=new THREE.Mesh(
+    new THREE.SphereGeometry(.075,16,16),
+    new THREE.MeshBasicMaterial({color:0xe13e37})
+  );
+  group.add(dot);
+  const sp=makeTextSprite(text,"#222222",58);
+  sp.position.set(.16,.15,.05);
+  sp.scale.set(.7,.27,1);
+  group.add(sp);
+  group.position.copy(pos);
+  addObj(group);
 }
 
-ctx.strokeStyle="#e13e37";
-
-ctx.lineWidth=4;
-
-ctx.lineCap="round";
-
-ctx.stroke();
-
-ctx.restore();
-
+function dashedLine(a,b){
+  const geo=new THREE.BufferGeometry().setFromPoints([a,b]);
+  const line=new THREE.Line(
+    geo,
+    new THREE.LineDashedMaterial({color:0xe13e37,dashSize:.13,gapSize:.09,linewidth:1})
+  );
+  line.computeLineDistances();
+  return addObj(line);
 }
 
-
-/* =====================================================
-   DRAW MOVING OBJECT
-===================================================== */
-
-function drawMovingObject(
-data,
-t
-){
-
-const p=
-getMovingPoint(
-data,
-t
-);
-
-
-/* glow */
-
-ctx.beginPath();
-
-ctx.arc(
-p.x,
-p.y,
-23,
-0,
-Math.PI*2
-);
-
-ctx.fillStyle=
-"rgba(225,62,55,.13)";
-
-ctx.fill();
-
-
-/* outer circle */
-
-ctx.beginPath();
-
-ctx.arc(
-p.x,
-p.y,
-10,
-0,
-Math.PI*2
-);
-
-ctx.fillStyle="#e13e37";
-
-ctx.fill();
-
-ctx.strokeStyle="white";
-
-ctx.lineWidth=3;
-
-ctx.stroke();
-
-
-/* direction arrow on object */
-
-if(t<.98){
-
-const p2=
-getMovingPoint(
-data,
-Math.min(
-1,
-t+.02
-)
-);
-
-const angle=
-Math.atan2(
-p2.y-p.y,
-p2.x-p.x
-);
-
-ctx.beginPath();
-
-ctx.moveTo(
-p.x,
-p.y
-);
-
-ctx.lineTo(
-p.x+25*Math.cos(angle),
-p.y+25*Math.sin(angle)
-);
-
-ctx.strokeStyle="#8e211f";
-
-ctx.lineWidth=2;
-
-ctx.stroke();
-
+function solidCurve(points){
+  const curve=new THREE.CatmullRomCurve3(points);
+  const geo=new THREE.TubeGeometry(curve,80,.026,8,false);
+  return addObj(new THREE.Mesh(
+    geo,
+    new THREE.MeshBasicMaterial({color:0xe13e37})
+  ));
 }
 
+function makeArrow(a,b,color=0xe13e37,size=.16){
+  const dir=b.clone().sub(a).normalize();
+  const cone=new THREE.Mesh(
+    new THREE.ConeGeometry(size*.72,size,12),
+    new THREE.MeshBasicMaterial({color})
+  );
+  cone.position.copy(b);
+  cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);
+  return cone;
 }
 
-
-/* =====================================================
-   LABEL
-===================================================== */
-
-function labelPoint(
-p,
-text
-){
-
-ctx.save();
-
-ctx.beginPath();
-
-ctx.arc(
-p.x,
-p.y,
-6,
-0,
-Math.PI*2
-);
-
-ctx.fillStyle="#e13e37";
-
-ctx.fill();
-
-ctx.strokeStyle="white";
-
-ctx.lineWidth=2;
-
-ctx.stroke();
-
-
-ctx.font="bold 17px Arial";
-
-ctx.fillStyle="#222";
-
-ctx.fillText(
-text,
-p.x+9,
-p.y-8
-);
-
-ctx.restore();
-
+function curvePoints(d){
+  const p0=latLon(...d.start);
+  const pt=latLon(...d.turn);
+  const p2=latLon(...d.final);
+  // The solid deflected path starts exactly at the intermediate point pt.
+  // The control point is offset inward so the path visibly bends.
+  const midDir = pt.clone().normalize();
+  const side = new THREE.Vector3(-midDir.z, 0, midDir.x).normalize();
+  const bend = side.multiplyScalar(d.direction === "right" ? -0.42 : 0.42);
+  const control = pt.clone().add(bend);
+  const curve=new THREE.QuadraticBezierCurve3(pt,control,p2);
+  return {p0,pt,p2,curve};
 }
 
+function drawCase(key, full=false){
+  clearCaseObjects();
+  const d=DATA[key];
+  if(!d) return;
 
-/* =====================================================
-   DRAW ONE CASE
-===================================================== */
+  const {p0,pt,p2,curve}=curvePoints(d);
 
-function drawCase(
-key,
-animated=true
-){
+  // Initial direction: dashed line from start to the turning point.
+  dashedLine(p0,pt);
+  addObj(makeArrow(p0,pt));
 
-const d=
-cases[key];
+  // Deflected direction: solid curved path, beginning exactly at pt.
+  const tCurve = full ? 1 : Math.max(0, (progress-.5)/.5);
+  if(full || progress>.5){
+    const pts=curve.getPoints(Math.max(8,Math.floor(80*tCurve)));
+    if(pts.length>=2){
+      solidCurve(pts);
+      addObj(makeArrow(pts[pts.length-2],pts[pts.length-1],0xe13e37,.18));
+    }
+  }
 
+  addPointLabel(p0,d.labels[0]);
+  addPointLabel(pt,d.labels[1]);
+  addPointLabel(p2,d.labels[2]);
 
-/*
-   Hướng ban đầu
-   luôn hiển thị bằng nét đứt.
-*/
-
-drawArrow(
-d.start,
-d.initial,
-1,
-true
-);
-
-
-/*
-   Hướng sau khi lệch.
-*/
-
-if(animated){
-
-/*
-   Nếu đang chạy:
-   vẽ đường cong.
-
-*/
-
-drawMovingTrail(
-d,
-progress
-);
-
+  if(running && !full && progress<1){
+    const moving = progress<=.5
+      ? p0.clone().lerp(pt, progress/.5)
+      : curve.getPoint((progress-.5)/.5);
+    const glow=new THREE.Mesh(
+      new THREE.SphereGeometry(.13,20,20),
+      new THREE.MeshBasicMaterial({color:0xffd84d})
+    );
+    addObj(glow);
+    glow.position.copy(moving);
+  }
 }
-else{
-
-/*
-   Khi xem toàn bộ:
-   vẽ quỹ đạo hoàn chỉnh.
-*/
-
-drawMovingTrail(
-d,
-1
-);
-
-}
-
-
-/*
-   điểm xuất phát
-*/
-
-labelPoint(
-d.start,
-d.startLabel
-);
-
-
-/*
-   điểm cuối hướng ban đầu
-*/
-
-labelPoint(
-d.initial,
-d.initialLabel
-);
-
-
-/*
-   điểm cuối sau lệch
-*/
-
-labelPoint(
-d.final,
-d.finalLabel
-);
-
-
-/*
-   vật thể đang chạy
-*/
-
-if(
-animated &&
-running &&
-progress<1
-){
-
-drawMovingObject(
-d,
-progress
-);
-
-}
-
-}
-
-
-/* =====================================================
-   RENDER
-===================================================== */
-
-function render(){
-
-drawBackground();
-
-drawEarth();
-
-
-const selected=
-select.value;
-
-
-if(selected==="ALL"){
-
-drawCase("AB",false);
-drawCase("CD",false);
-drawCase("OP",false);
-drawCase("MN",false);
-
-}
-else{
-
-drawCase(
-selected,
-true
-);
-
-}
-
-}
-
-
-/* =====================================================
-   INFO
-===================================================== */
 
 function updateInfo(){
-
-const key=
-select.value;
-
-
-if(key==="ALL"){
-
-info.innerHTML=`
-
-<b>⭐ So sánh 4 trường hợp</b>
-
-<br><br>
-
-Quan sát:
-
-<br><br>
-
-🔵 <b>Bắc:</b>
-lệch về bên phải.
-
-<br><br>
-
-🔴 <b>Nam:</b>
-lệch về bên trái.
-
-<br><br>
-
-⚠️ “Phải” và “trái” phải được xác định
-<b>theo hướng chuyển động của vật thể</b>,
-không phải theo phía trái/phải của màn hình.
-
-`;
-
-answerText.innerHTML=`
-
-<b>Bán cầu Bắc → lệch phải.</b>
-
-<br>
-
-<b>Bán cầu Nam → lệch trái.</b>
-
-`;
-
-return;
-
+  const key=select.value;
+  if(key==="ALL"){
+    info.innerHTML=`<b>⭐ So sánh 4 trường hợp</b><br><br>
+    🔵 <b>Bắc:</b> lệch về bên phải.<br><br>
+    🔴 <b>Nam:</b> lệch về bên trái.<br><br>
+    Xoay Trái Đất bằng chuột để quan sát không gian 3D. Kéo để xoay, cuộn để phóng to/thu nhỏ.`;
+    answerText.innerHTML=`<b>Bán cầu Bắc → lệch phải.</b><br><b>Bán cầu Nam → lệch trái.</b>`;
+    return;
+  }
+  const d=DATA[key];
+  info.innerHTML=`<b>${key==="AB"?"A → B / B′":key==="CD"?"C → D / D′":key==="OP"?"O → P / P′":"M → N / N′"}</b>
+  <br><br>Trường hợp này thuộc <b>${d.hemisphere}</b>.<br><br>
+  🔴 Nét đứt: <b>hướng ban đầu</b>.<br>
+  🔴 Nét liền: <b>hướng sau khi lệch</b>.<br><br>
+  Kéo chuột để xoay Trái Đất và quan sát đường chuyển động ở nhiều góc nhìn.`;
+  answerText.innerHTML=`Vật thể ở <b>${d.hemisphere}</b>.<br><br>→ Vật thể lệch về <b>${d.hemisphere==="Bán cầu Bắc"?"bên phải":"bên trái"}</b> so với hướng chuyển động.`;
 }
 
-
-const d=
-cases[key];
-
-
-info.innerHTML=`
-
-<b>${d.name}</b>
-
-<br><br>
-
-Trường hợp này thuộc
-<b>${d.hemisphere}</b>.
-
-<br><br>
-
-🔴 Nét đứt:
-<b>hướng ban đầu</b>.
-
-<br>
-
-🔴 Nét liền:
-<b>hướng sau khi lệch</b>.
-
-<br><br>
-
-Hãy quan sát vật thể
-<b>di chuyển từ điểm xuất phát</b>
-và dần dần lệch khỏi hướng ban đầu.
-
-`;
-
-
-answerText.innerHTML=`
-
-Vật thể ở
-<b>${d.hemisphere}</b>.
-
-<br><br>
-
-→ Vật thể lệch về
-
-<b>
-${
-d.hemisphere==="Bán cầu Bắc"
-? "bên phải"
-: "bên trái"
-}
-</b>
-
-so với hướng chuyển động.
-
-`;
-
+function render(){
+  const key=select.value;
+  if(key==="ALL"){
+    clearCaseObjects();
+    ["AB","CD","OP","MN"].forEach(k=>drawCase(k,true));
+  }else{
+    drawCase(key,false);
+  }
 }
 
+function resize(){
+  const w=canvas.clientWidth || 900;
+  const h=canvas.clientHeight || 650;
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener("resize",resize);
 
-/* =====================================================
-   ANIMATION LOOP
-===================================================== */
+startBtn.addEventListener("click",()=>{
+  if(select.value==="ALL"){
+    progress=1; running=false; answer.classList.remove("hidden"); render(); return;
+  }
+  if(progress>=1) progress=0;
+  running=true; lastTime=0; answer.classList.add("hidden");
+  cancelAnimationFrame(animationID);
+  animationID=requestAnimationFrame(animate);
+});
+
+pauseBtn.addEventListener("click",()=>{
+  running=false;
+  cancelAnimationFrame(animationID);
+});
+
+answerBtn.addEventListener("click",()=>{
+  running=false; progress=1; answer.classList.remove("hidden"); render();
+});
+
+resetBtn.addEventListener("click",()=>{
+  running=false; cancelAnimationFrame(animationID);
+  progress=0; lastTime=0; answer.classList.add("hidden"); render();
+});
+
+select.addEventListener("change",()=>{
+  running=false; progress=0; lastTime=0; answer.classList.add("hidden"); updateInfo(); render();
+});
+
+speed.addEventListener("input",()=>{
+  speedText.textContent=speed.value+"×";
+});
 
 function animate(time){
-
-if(!running)
-return;
-
-
-if(!lastTime)
-lastTime=time;
-
-
-const delta=
-time-lastTime;
-
-lastTime=time;
-
-
-/*
-   Tốc độ.
-
-   Hệ số này được cố tình tăng
-   để chuyển động nhìn rõ trên lớp.
-*/
-
-progress +=
-delta*
-0.00055*
-Number(speed.value);
-
-
-/*
-   Khi tới cuối
-*/
-
-if(progress>=1){
-
-progress=1;
-
-running=false;
-
-answer.classList.remove(
-"hidden"
-);
-
+  if(!running) return;
+  if(!lastTime) lastTime=time;
+  const delta=time-lastTime; lastTime=time;
+  progress += delta*0.00055*Number(speed.value);
+  if(progress>=1){
+    progress=1; running=false;
+    answer.classList.remove("hidden");
+  }
+  render();
+  if(running) animationID=requestAnimationFrame(animate);
 }
 
-
-render();
-
-
-if(running){
-
-animationID=
-requestAnimationFrame(
-animate
-);
-
+function frame(){
+  // Trái Đất tự quay quanh trục. OrbitControls autoRotate cũng vẫn cho phép
+  // người dùng can thiệp bằng chuột/touch bất cứ lúc nào.
+  earth.rotation.y += 0.0026;
+  controls.update();
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
 }
-
-}
-
-
-/* =====================================================
-   START
-===================================================== */
-
-startBtn.addEventListener(
-"click",
-function(){
-
-const key=
-select.value;
-
-
-if(key==="ALL"){
-
-progress=1;
-
-running=false;
-
-answer.classList.remove(
-"hidden"
-);
-
-render();
-
-return;
-
-}
-
-
-/*
-   Nếu đã chạy xong,
-   bấm chạy lại từ đầu.
-*/
-
-if(progress>=1){
-
-progress=0;
-
-}
-
-
-/*
-   Bắt đầu chuyển động.
-*/
-
-running=true;
-
-lastTime=0;
-
-answer.classList.add(
-"hidden"
-);
-
-
-cancelAnimationFrame(
-animationID
-);
-
-
-animationID=
-requestAnimationFrame(
-animate
-);
-
-});
-
-
-/* =====================================================
-   PAUSE
-===================================================== */
-
-pauseBtn.addEventListener(
-"click",
-function(){
-
-running=false;
-
-cancelAnimationFrame(
-animationID
-);
-
-});
-
-
-/* =====================================================
-   ANSWER
-===================================================== */
-
-answerBtn.addEventListener(
-"click",
-function(){
-
-running=false;
-
-progress=1;
-
-answer.classList.remove(
-"hidden"
-);
-
-render();
-
-});
-
-
-/* =====================================================
-   RESET
-===================================================== */
-
-resetBtn.addEventListener(
-"click",
-function(){
-
-running=false;
-
-cancelAnimationFrame(
-animationID
-);
-
-progress=0;
-
-lastTime=0;
-
-answer.classList.add(
-"hidden"
-);
-
-render();
-
-});
-
-
-/* =====================================================
-   CHANGE CASE
-===================================================== */
-
-select.addEventListener(
-"change",
-function(){
-
-running=false;
-
-progress=0;
-
-lastTime=0;
-
-answer.classList.add(
-"hidden"
-);
 
 updateInfo();
-
+resize();
 render();
-
-});
-
-
-/* =====================================================
-   SPEED
-===================================================== */
-
-speed.addEventListener(
-"input",
-function(){
-
-speedText.textContent=
-speed.value+"×";
-
-});
-
-
-/* =====================================================
-   INITIAL
-===================================================== */
-
-updateInfo();
-
-render();
-
+frame();
 </script>
 
 </body>
