@@ -1,0 +1,3520 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>
+Mô hình sự lệch hướng chuyển động của vật thể trên Trái Đất
+</title>
+
+<style>
+
+/* =========================================================
+   CÀI ĐẶT CHUNG
+========================================================= */
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    background:
+        linear-gradient(
+            135deg,
+            #eaf7ff,
+            #f7fbff
+        );
+
+    color:#17384d;
+}
+
+
+/* =========================================================
+   KHUNG CHÍNH
+========================================================= */
+
+.container{
+    width:min(1400px,96%);
+    margin:20px auto 40px;
+}
+
+
+.title{
+    text-align:center;
+    margin-bottom:4px;
+
+    color:#075b86;
+
+    font-size:
+        clamp(23px,3vw,34px);
+
+    font-weight:800;
+}
+
+
+.subtitle{
+    text-align:center;
+
+    color:#617b89;
+
+    margin-top:5px;
+    margin-bottom:20px;
+
+    font-size:15px;
+}
+
+
+/* =========================================================
+   BỐ CỤC
+========================================================= */
+
+.workspace{
+
+    display:grid;
+
+    grid-template-columns:
+        300px
+        minmax(500px,1fr)
+        300px;
+
+    gap:16px;
+
+    align-items:start;
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.card{
+
+    background:#ffffff;
+
+    border-radius:18px;
+
+    box-shadow:
+        0 7px 25px
+        rgba(20,90,120,.12);
+
+    padding:18px;
+}
+
+
+.card h2{
+
+    margin-top:0;
+
+    color:#075f8d;
+
+    font-size:20px;
+}
+
+
+.card h3{
+
+    color:#0c668e;
+
+    font-size:17px;
+
+    margin-top:18px;
+}
+
+
+/* =========================================================
+   ĐIỀU KHIỂN
+========================================================= */
+
+.control-group{
+
+    margin-bottom:16px;
+}
+
+
+.control-group label{
+
+    display:block;
+
+    font-weight:700;
+
+    margin-bottom:7px;
+}
+
+
+select{
+
+    width:100%;
+
+    padding:11px 12px;
+
+    border:
+        1px solid
+        #b8ced9;
+
+    border-radius:9px;
+
+    background:#ffffff;
+
+    color:#17384d;
+
+    font-size:15px;
+
+    cursor:pointer;
+}
+
+
+button{
+
+    width:100%;
+
+    border:0;
+
+    border-radius:9px;
+
+    padding:11px 12px;
+
+    margin-top:7px;
+
+    font-size:14px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+
+button:hover{
+
+    transform:
+        translateY(-1px);
+
+    filter:brightness(.97);
+}
+
+
+.btn-primary{
+
+    background:#087bb4;
+
+    color:white;
+}
+
+
+.btn-secondary{
+
+    background:#718b99;
+
+    color:white;
+}
+
+
+.btn-light{
+
+    background:#e8f1f5;
+
+    color:#285164;
+}
+
+
+.btn-green{
+
+    background:#258b70;
+
+    color:white;
+}
+
+
+.speed{
+
+    margin-top:13px;
+}
+
+
+.speed input{
+
+    width:100%;
+}
+
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+.canvas-card{
+
+    padding:12px;
+
+    position:relative;
+}
+
+
+.canvas-wrapper{
+
+    width:100%;
+
+    background:
+        radial-gradient(
+            circle at 50% 45%,
+            #ffffff,
+            #eef8fc
+        );
+
+    border-radius:15px;
+
+    overflow:hidden;
+}
+
+
+canvas{
+
+    width:100%;
+
+    display:block;
+
+    cursor:grab;
+}
+
+
+canvas.dragging{
+
+    cursor:grabbing;
+}
+
+
+/* =========================================================
+   CHÚ GIẢI
+========================================================= */
+
+.legend{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:22px;
+
+    flex-wrap:wrap;
+
+    padding:
+        12px 5px 4px;
+
+    font-size:13px;
+}
+
+
+.legend-item{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:7px;
+}
+
+
+.legend-line{
+
+    width:40px;
+
+    height:0;
+
+    border-top:4px solid;
+}
+
+
+.legend-dashed{
+
+    border-top-style:dashed;
+}
+
+
+/* =========================================================
+   THÔNG TIN HIỆN TẠI
+========================================================= */
+
+.current-case{
+
+    background:#edf8ff;
+
+    border-left:
+        5px solid
+        #087bb4;
+
+    padding:12px;
+
+    border-radius:8px;
+
+    line-height:1.6;
+
+    font-size:14px;
+}
+
+
+.conclusion{
+
+    border-radius:12px;
+
+    padding:15px;
+
+    line-height:1.6;
+
+    margin-top:15px;
+}
+
+
+.north-box{
+
+    background:#eef8ff;
+
+    border-left:
+        5px solid
+        #087bb4;
+}
+
+
+.south-box{
+
+    background:#fff3ec;
+
+    border-left:
+        5px solid
+        #dd7338;
+}
+
+
+/* =========================================================
+   BẢNG QUY LUẬT
+========================================================= */
+
+.rule-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    font-size:13px;
+}
+
+
+.rule-table th,
+.rule-table td{
+
+    border:
+        1px solid
+        #d3e1e7;
+
+    padding:8px;
+
+    text-align:left;
+}
+
+
+.rule-table th{
+
+    background:#eaf5fa;
+
+    color:#155c79;
+}
+
+
+/* =========================================================
+   CÂU HỎI
+========================================================= */
+
+.question{
+
+    background:#fffdf2;
+
+    border-left:
+        5px solid
+        #e4b52e;
+
+    padding:13px;
+
+    border-radius:9px;
+
+    line-height:1.65;
+
+    font-size:14px;
+}
+
+
+/* =========================================================
+   NHÃN
+========================================================= */
+
+.badge{
+
+    display:inline-block;
+
+    padding:
+        4px 9px;
+
+    border-radius:20px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    margin-bottom:7px;
+}
+
+
+.badge-north{
+
+    background:#dcefff;
+
+    color:#075e89;
+}
+
+
+.badge-south{
+
+    background:#ffe5d8;
+
+    color:#9a4c22;
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer-note{
+
+    text-align:center;
+
+    margin-top:18px;
+
+    color:#6e858f;
+
+    font-size:12px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:1100px){
+
+    .workspace{
+
+        grid-template-columns:
+            260px
+            1fr;
+    }
+
+    .right-panel{
+
+        grid-column:
+            1 / -1;
+    }
+
+}
+
+
+@media(max-width:700px){
+
+    .workspace{
+
+        grid-template-columns:1fr;
+    }
+
+    .right-panel{
+
+        grid-column:auto;
+    }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+<!-- ======================================================
+     TIÊU ĐỀ
+====================================================== -->
+
+<div class="title">
+
+🌎 SỰ LỆCH HƯỚNG CHUYỂN ĐỘNG CỦA VẬT THỂ TRÊN TRÁI ĐẤT
+
+</div>
+
+
+<div class="subtitle">
+
+Mô hình trực quan bài
+<b>“Chuyển động tự quay quanh trục của Trái Đất và hệ quả”</b>
+– Địa lí 6
+
+</div>
+
+
+
+<div class="workspace">
+
+
+<!-- ======================================================
+     CỘT TRÁI – ĐIỀU KHIỂN
+====================================================== -->
+
+<div class="card">
+
+<h2>⚙️ Điều khiển mô hình</h2>
+
+
+<div class="control-group">
+
+<label>
+1. Chọn trường hợp
+</label>
+
+<select id="caseSelect">
+
+<option value="AB">
+A → B / B'
+</option>
+
+<option value="CD">
+C → D / D'
+</option>
+
+<option value="MN">
+M → N / N'
+</option>
+
+<option value="OP">
+O → P / P'
+</option>
+
+<option value="ALL">
+⭐ Hiển thị tất cả
+</option>
+
+</select>
+
+</div>
+
+
+
+<div class="control-group">
+
+<label>
+2. Chọn bán cầu
+</label>
+
+<select id="hemisphereSelect">
+
+<option value="auto">
+Theo vị trí vật thể
+</option>
+
+<option value="north">
+Bán cầu Bắc
+</option>
+
+<option value="south">
+Bán cầu Nam
+</option>
+
+</select>
+
+</div>
+
+
+
+<div class="control-group">
+
+<label>
+3. Chế độ quan sát
+</label>
+
+<select id="modeSelect">
+
+<option value="normal">
+Quan sát đầy đủ
+</option>
+
+<option value="predict">
+🔎 Dự đoán trước
+</option>
+
+<option value="compare">
+⚖️ So sánh hai bán cầu
+</option>
+
+</select>
+
+</div>
+
+
+
+<button
+    class="btn-primary"
+    id="playBtn">
+
+▶ BẮT ĐẦU CHUYỂN ĐỘNG
+
+</button>
+
+
+<button
+    class="btn-secondary"
+    id="pauseBtn">
+
+⏸ TẠM DỪNG
+
+</button>
+
+
+<button
+    class="btn-light"
+    id="resetBtn">
+
+↻ LÀM LẠI
+
+</button>
+
+
+<button
+    class="btn-green"
+    id="rotateBtn">
+
+🔄 BẬT / TẮT TRÁI ĐẤT TỰ QUAY
+
+</button>
+
+
+
+<div class="speed">
+
+<label>
+Tốc độ mô phỏng
+</label>
+
+<input
+    id="speedSlider"
+    type="range"
+    min="0.5"
+    max="4"
+    step="0.5"
+    value="1.5">
+
+<div
+    id="speedText"
+    style="text-align:center;font-size:13px">
+
+1.5×
+
+</div>
+
+</div>
+
+
+
+<h3>🖱️ Điều khiển góc nhìn</h3>
+
+<div
+    style="
+    font-size:13px;
+    line-height:1.6;
+    color:#607985;">
+
+• Kéo chuột để xoay Trái Đất.<br>
+
+• Cuộn chuột để phóng to/thu nhỏ.<br>
+
+• Bấm “Làm lại” để trở về vị trí ban đầu.
+
+</div>
+
+
+</div>
+
+
+
+<!-- ======================================================
+     CỘT GIỮA – TRÁI ĐẤT
+====================================================== -->
+
+<div class="card canvas-card">
+
+<div class="canvas-wrapper">
+
+<canvas
+    id="globeCanvas"
+    width="900"
+    height="650">
+</canvas>
+
+</div>
+
+
+<div class="legend">
+
+<div class="legend-item">
+
+<span
+    class="legend-line legend-dashed"
+    style="border-color:#e34444">
+</span>
+
+Hướng chuyển động ban đầu
+
+</div>
+
+
+<div class="legend-item">
+
+<span
+    class="legend-line"
+    style="border-color:#087bb4">
+</span>
+
+Hướng sau khi lệch
+
+</div>
+
+
+<div class="legend-item">
+
+<span
+    style="
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:#ef3f3f;">
+</span>
+
+Vật thể
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- ======================================================
+     CỘT PHẢI – THÔNG TIN
+====================================================== -->
+
+<div class="card right-panel">
+
+<h2>🔎 Quan sát</h2>
+
+
+<div
+    id="caseInfo"
+    class="current-case">
+
+Đang tải mô hình...
+
+</div>
+
+
+
+<div
+    id="conclusionBox"
+    class="conclusion north-box">
+
+<h3 style="margin-top:0">
+
+📌 Quy luật cần phát hiện
+
+</h3>
+
+<p>
+
+Ở <b>bán cầu Bắc</b>,
+vật thể có xu hướng lệch về
+<b>bên phải</b> so với hướng chuyển động.
+
+</p>
+
+<p>
+
+Ở <b>bán cầu Nam</b>,
+vật thể có xu hướng lệch về
+<b>bên trái</b> so với hướng chuyển động.
+
+</p>
+
+</div>
+
+
+
+<h3>
+📚 Quy luật
+</h3>
+
+
+<table class="rule-table">
+
+<tr>
+
+<th>
+Khu vực
+</th>
+
+<th>
+Sự lệch hướng
+</th>
+
+</tr>
+
+
+<tr>
+
+<td>
+🌎 Bán cầu Bắc
+</td>
+
+<td>
+➡️ Bên phải
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+🌎 Bán cầu Nam
+</td>
+
+<td>
+⬅️ Bên trái
+</td>
+
+</tr>
+
+</table>
+
+
+
+<h3>
+❓ Câu hỏi khám phá
+</h3>
+
+
+<div class="question">
+
+<b>1.</b>
+Vật thể có đi đúng theo hướng ban đầu không?
+
+<br><br>
+
+<b>2.</b>
+Quan sát vật thể ở bán cầu Bắc.
+Vật thể lệch về phía nào?
+
+<br><br>
+
+<b>3.</b>
+Điều gì xảy ra khi chuyển sang bán cầu Nam?
+
+<br><br>
+
+<b>4.</b>
+Từ mô hình, em hãy nêu quy luật
+lệch hướng chuyển động của vật thể.
+
+<br><br>
+
+<b>5.</b>
+Theo em, nguyên nhân nào gây ra
+hiện tượng lệch hướng này?
+
+</div>
+
+
+</div>
+
+</div>
+
+
+
+<!-- ======================================================
+     PHẦN GIẢI THÍCH
+====================================================== -->
+
+<div
+    class="card"
+    style="margin-top:16px;">
+
+<h2>
+💡 Vì sao vật thể bị lệch hướng?
+</h2>
+
+
+<p style="line-height:1.7">
+
+Trái Đất không đứng yên mà
+<b>tự quay quanh trục từ Tây sang Đông</b>.
+Do Trái Đất tự quay,
+các vật thể chuyển động trên bề mặt Trái Đất
+không giữ nguyên hướng chuyển động ban đầu
+mà có xu hướng bị lệch.
+
+</p>
+
+
+<div
+    style="
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;">
+
+<div
+    class="conclusion north-box">
+
+<b>🌎 Bán cầu Bắc</b>
+
+<p>
+
+Vật thể chuyển động có xu hướng
+<b>lệch về bên phải</b>
+so với hướng chuyển động.
+
+</p>
+
+</div>
+
+
+<div
+    class="conclusion south-box">
+
+<b>🌎 Bán cầu Nam</b>
+
+<p>
+
+Vật thể chuyển động có xu hướng
+<b>lệch về bên trái</b>
+so với hướng chuyển động.
+
+</p>
+
+</div>
+
+</div>
+
+
+</div>
+
+
+
+<div class="footer-note">
+
+Mô hình phục vụ mục đích minh họa trực quan trong dạy học.
+Quỹ đạo được phóng đại để học sinh dễ quan sát.
+
+</div>
+
+
+</div>
+
+
+
+<script>
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas =
+document.getElementById("globeCanvas");
+
+const ctx =
+canvas.getContext("2d");
+
+
+/* =========================================================
+   DOM
+========================================================= */
+
+const caseSelect =
+document.getElementById("caseSelect");
+
+const hemisphereSelect =
+document.getElementById("hemisphereSelect");
+
+const modeSelect =
+document.getElementById("modeSelect");
+
+const playBtn =
+document.getElementById("playBtn");
+
+const pauseBtn =
+document.getElementById("pauseBtn");
+
+const resetBtn =
+document.getElementById("resetBtn");
+
+const rotateBtn =
+document.getElementById("rotateBtn");
+
+const speedSlider =
+document.getElementById("speedSlider");
+
+const speedText =
+document.getElementById("speedText");
+
+const caseInfo =
+document.getElementById("caseInfo");
+
+const conclusionBox =
+document.getElementById("conclusionBox");
+
+
+/* =========================================================
+   THÔNG SỐ
+========================================================= */
+
+let W = canvas.width;
+let H = canvas.height;
+
+let cx = W/2;
+let cy = H/2 + 10;
+
+let R = 230;
+
+
+/* =========================================================
+   GÓC XOAY TRÁI ĐẤT
+========================================================= */
+
+let rotationLon = 0;
+
+let rotationLat = 0;
+
+
+/* =========================================================
+   ZOOM
+========================================================= */
+
+let zoom = 1;
+
+
+/* =========================================================
+   KÉO CHUỘT
+========================================================= */
+
+let dragging = false;
+
+let lastMouseX = 0;
+
+let lastMouseY = 0;
+
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+let animationRunning = false;
+
+let earthRotating = false;
+
+let animationProgress = 0;
+
+let animationFrame = null;
+
+let lastTime = 0;
+
+
+/* =========================================================
+   CÁC TRƯỜNG HỢP
+=========================================================
+
+   lat = vĩ độ
+   lon = kinh độ
+
+   dx / dy:
+   hướng chuyển động trên mặt phẳng
+========================================================= */
+
+const cases = {
+
+
+AB:{
+
+    name:
+    "A → B / B'",
+
+    lat:45,
+
+    lon:-15,
+
+    dx:0,
+
+    dy:1,
+
+    hemisphere:"north",
+
+    description:
+    "Vật thể chuyển động ở bán cầu Bắc. " +
+    "Sau khi chuyển động, quỹ đạo có xu hướng " +
+    "lệch sang bên phải so với hướng ban đầu."
+
+},
+
+
+CD:{
+
+    name:
+    "C → D / D'",
+
+    lat:30,
+
+    lon:80,
+
+    dx:0,
+
+    dy:-1,
+
+    hemisphere:"north",
+
+    description:
+    "Vật thể chuyển động ở bán cầu Bắc theo hướng ngược lại. " +
+    "Quy luật lệch hướng vẫn được giữ nguyên: lệch về bên phải."
+
+},
+
+
+MN:{
+
+    name:
+    "M → N / N'",
+
+    lat:-30,
+
+    lon:130,
+
+    dx:1,
+
+    dy:0,
+
+    hemisphere:"south",
+
+    description:
+    "Vật thể chuyển động ở bán cầu Nam. " +
+    "Quỹ đạo có xu hướng lệch về bên trái so với hướng ban đầu."
+
+},
+
+
+OP:{
+
+    name:
+    "O → P / P'",
+
+    lat:-25,
+
+    lon:-50,
+
+    dx:-1,
+
+    dy:0,
+
+    hemisphere:"south",
+
+    description:
+    "Vật thể chuyển động ở bán cầu Nam. " +
+    "Sau khi chuyển động, vật thể có xu hướng lệch sang bên trái."
+
+}
+
+};
+
+
+/* =========================================================
+   CHUYỂN ĐỘNG 3D
+========================================================= */
+
+function degToRad(deg){
+
+    return deg*Math.PI/180;
+
+}
+
+
+/* =========================================================
+   TỌA ĐỘ ĐỊA LÝ → TỌA ĐỘ 3D
+========================================================= */
+
+function geoTo3D(lat,lon){
+
+    let la =
+        degToRad(lat);
+
+    let lo =
+        degToRad(lon + rotationLon);
+
+
+    let x =
+        Math.cos(la)*Math.sin(lo);
+
+    let y =
+        Math.sin(la);
+
+    let z =
+        Math.cos(la)*Math.cos(lo);
+
+
+    return {
+        x:x,
+        y:y,
+        z:z
+    };
+
+}
+
+
+/* =========================================================
+   XOAY THEO VĨ ĐỘ
+========================================================= */
+
+function rotateLatitude(p){
+
+    let a =
+        degToRad(rotationLat);
+
+    let y =
+        p.y*Math.cos(a)
+        -
+        p.z*Math.sin(a);
+
+    let z =
+        p.y*Math.sin(a)
+        +
+        p.z*Math.cos(a);
+
+    return {
+        x:p.x,
+        y:y,
+        z:z
+    };
+
+}
+
+
+/* =========================================================
+   CHIẾU 3D → 2D
+========================================================= */
+
+function project(p){
+
+    let q =
+        rotateLatitude(p);
+
+
+    let visible =
+        q.z >= 0;
+
+
+    let scale =
+        R*zoom;
+
+
+    return {
+
+        x:
+        cx +
+        q.x*scale,
+
+        y:
+        cy -
+        q.y*scale,
+
+        visible:
+        visible,
+
+        z:
+        q.z
+
+    };
+
+}
+
+
+/* =========================================================
+   VẼ QUẢ ĐỊA CẦU
+========================================================= */
+
+function drawGlobe(){
+
+    ctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /* nền */
+
+    let bg =
+        ctx.createRadialGradient(
+            cx,
+            cy,
+            50,
+            cx,
+            cy,
+            500
+        );
+
+    bg.addColorStop(
+        0,
+        "#ffffff"
+    );
+
+    bg.addColorStop(
+        1,
+        "#eaf7fc"
+    );
+
+    ctx.fillStyle =
+        bg;
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /* bóng phía sau */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        cx+12,
+        cy+15,
+        R*zoom,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fillStyle =
+        "rgba(20,80,110,.12)";
+
+    ctx.fill();
+
+
+    /* quả cầu */
+
+    let earthGradient =
+        ctx.createRadialGradient(
+            cx-R*.35,
+            cy-R*.45,
+            20,
+            cx,
+            cy,
+            R
+        );
+
+    earthGradient.addColorStop(
+        0,
+        "#c9f0ff"
+    );
+
+    earthGradient.addColorStop(
+        .55,
+        "#72c7e8"
+    );
+
+    earthGradient.addColorStop(
+        1,
+        "#267da8"
+    );
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        cx,
+        cy,
+        R*zoom,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fillStyle =
+        earthGradient;
+
+    ctx.fill();
+
+
+    /* lưới */
+
+    drawGrid();
+
+
+    /* lục địa */
+
+    drawContinents();
+
+
+    /* xích đạo */
+
+    drawEquator();
+
+
+    /* trục */
+
+    drawAxis();
+
+
+    /* hướng Đông Tây */
+
+    drawDirections();
+
+
+    /* mũi tên tự quay */
+
+    drawRotationArrow();
+
+}
+
+
+/* =========================================================
+   LƯỚI KINH TUYẾN – VĨ TUYẾN
+========================================================= */
+
+function drawGrid(){
+
+    ctx.save();
+
+    ctx.beginPath();
+
+    ctx.arc(
+        cx,
+        cy,
+        R*zoom,
+        0,
+        Math.PI*2
+    );
+
+    ctx.clip();
+
+
+    ctx.strokeStyle =
+        "rgba(30,110,145,.42)";
+
+    ctx.lineWidth =
+        1;
+
+
+    /* KINH TUYẾN */
+
+    for(
+        let lon=-150;
+        lon<=180;
+        lon+=30
+    ){
+
+        let started =
+            false;
+
+
+        for(
+            let lat=-90;
+            lat<=90;
+            lat+=3
+        ){
+
+            let p =
+                project(
+                    geoTo3D(
+                        lat,
+                        lon
+                    )
+                );
+
+
+            if(
+                p.visible
+            ){
+
+                if(!started){
+
+                    ctx.beginPath();
+
+                    ctx.moveTo(
+                        p.x,
+                        p.y
+                    );
+
+                    started=true;
+
+                }
+                else{
+
+                    ctx.lineTo(
+                        p.x,
+                        p.y
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        if(started)
+            ctx.stroke();
+
+    }
+
+
+    /* VĨ TUYẾN */
+
+    for(
+        let lat=-60;
+        lat<=60;
+        lat+=30
+    ){
+
+        let started =
+            false;
+
+
+        for(
+            let lon=-180;
+            lon<=180;
+            lon+=3
+        ){
+
+            let p =
+                project(
+                    geoTo3D(
+                        lat,
+                        lon
+                    )
+                );
+
+
+            if(
+                p.visible
+            ){
+
+                if(!started){
+
+                    ctx.beginPath();
+
+                    ctx.moveTo(
+                        p.x,
+                        p.y
+                    );
+
+                    started=true;
+
+                }
+                else{
+
+                    ctx.lineTo(
+                        p.x,
+                        p.y
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        if(started)
+            ctx.stroke();
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   XÍCH ĐẠO
+========================================================= */
+
+function drawEquator(){
+
+    ctx.save();
+
+    ctx.beginPath();
+
+    ctx.arc(
+        cx,
+        cy,
+        R*zoom,
+        0,
+        Math.PI*2
+    );
+
+    ctx.clip();
+
+
+    ctx.strokeStyle =
+        "rgba(10,85,115,.85)";
+
+    ctx.lineWidth =
+        2;
+
+
+    let started =
+        false;
+
+
+    for(
+        let lon=-180;
+        lon<=180;
+        lon+=2
+    ){
+
+        let p =
+            project(
+                geoTo3D(
+                    0,
+                    lon
+                )
+            );
+
+
+        if(p.visible){
+
+            if(!started){
+
+                ctx.beginPath();
+
+                ctx.moveTo(
+                    p.x,
+                    p.y
+                );
+
+                started=true;
+
+            }
+            else{
+
+                ctx.lineTo(
+                    p.x,
+                    p.y
+                );
+
+            }
+
+        }
+
+    }
+
+
+    ctx.stroke();
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   LỤC ĐỊA
+=========================================================
+
+   Các mảng chỉ có tính minh họa.
+========================================================= */
+
+const continents = [
+
+/* Châu Á */
+
+[
+    [45,40],
+    [55,70],
+    [50,100],
+    [35,125],
+    [20,120],
+    [10,105],
+    [20,80],
+    [30,55]
+],
+
+
+/* Châu Phi */
+
+[
+    [35,0],
+    [30,30],
+    [10,40],
+    [-10,35],
+    [-35,20],
+    [-30,-5],
+    [0,-15],
+    [20,-10]
+],
+
+
+/* Châu Âu */
+
+[
+    [50,-10],
+    [65,0],
+    [65,30],
+    [50,40],
+    [40,20],
+    [40,0]
+],
+
+
+/* Bắc Mỹ */
+
+[
+    [70,-160],
+    [55,-140],
+    [40,-120],
+    [25,-105],
+    [35,-80],
+    [55,-90],
+    [70,-120]
+],
+
+
+/* Nam Mỹ */
+
+[
+    [10,-80],
+    [0,-70],
+    [-20,-65],
+    [-40,-60],
+    [-55,-70],
+    [-30,-80],
+    [-10,-85]
+],
+
+
+/* Úc */
+
+[
+    [-15,130],
+    [-10,150],
+    [-25,155],
+    [-40,145],
+    [-35,125],
+    [-20,120]
+]
+
+];
+
+
+/* =========================================================
+   VẼ LỤC ĐỊA
+========================================================= */
+
+function drawContinents(){
+
+    ctx.save();
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        cx,
+        cy,
+        R*zoom,
+        0,
+        Math.PI*2
+    );
+
+    ctx.clip();
+
+
+    continents.forEach(
+        polygon => {
+
+            let started =
+                false;
+
+
+            polygon.forEach(
+                point => {
+
+                    let p =
+                        project(
+                            geoTo3D(
+                                point[0],
+                                point[1]
+                            )
+                        );
+
+
+                    if(
+                        p.visible
+                    ){
+
+                        if(!started){
+
+                            ctx.beginPath();
+
+                            ctx.moveTo(
+                                p.x,
+                                p.y
+                            );
+
+                            started=true;
+
+                        }
+                        else{
+
+                            ctx.lineTo(
+                                p.x,
+                                p.y
+                            );
+
+                        }
+
+                    }
+
+                }
+            );
+
+
+            ctx.closePath();
+
+
+            ctx.fillStyle =
+                "#e5d77c";
+
+            ctx.fill();
+
+            ctx.strokeStyle =
+                "#bcae58";
+
+            ctx.lineWidth =
+                1;
+
+            ctx.stroke();
+
+        }
+    );
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   TRỤC TRÁI ĐẤT
+========================================================= */
+
+function drawAxis(){
+
+    let p1 =
+        project(
+            geoTo3D(
+                90,
+                0
+            )
+        );
+
+
+    let p2 =
+        project(
+            geoTo3D(
+                -90,
+                0
+            )
+        );
+
+
+    ctx.strokeStyle =
+        "#087bb4";
+
+    ctx.lineWidth =
+        3;
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        p1.x,
+        p1.y
+    );
+
+    ctx.lineTo(
+        p2.x,
+        p2.y
+    );
+
+    ctx.stroke();
+
+
+    /* cực Bắc */
+
+    if(p1.visible){
+
+        ctx.fillStyle =
+            "#d73c3c";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p1.x,
+            p1.y,
+            5,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#b92e2e";
+
+        ctx.font =
+            "bold 15px Segoe UI";
+
+        ctx.fillText(
+            "CỰC BẮC",
+            p1.x-40,
+            p1.y-12
+        );
+
+    }
+
+
+    /* cực Nam */
+
+    if(p2.visible){
+
+        ctx.fillStyle =
+            "#d73c3c";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p2.x,
+            p2.y,
+            5,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#b92e2e";
+
+        ctx.font =
+            "bold 15px Segoe UI";
+
+        ctx.fillText(
+            "CỰC NAM",
+            p2.x+8,
+            p2.y+18
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   HƯỚNG BẮC – NAM – ĐÔNG – TÂY
+========================================================= */
+
+function drawDirections(){
+
+    ctx.font =
+        "bold 17px Segoe UI";
+
+    ctx.fillStyle =
+        "#bd3535";
+
+    ctx.textAlign =
+        "center";
+
+
+    ctx.fillText(
+        "BẮC ↑",
+        cx,
+        32
+    );
+
+
+    ctx.fillText(
+        "NAM ↓",
+        cx,
+        H-18
+    );
+
+
+    ctx.textAlign =
+        "left";
+
+    ctx.fillText(
+        "TÂY",
+        25,
+        cy
+    );
+
+
+    ctx.textAlign =
+        "right";
+
+    ctx.fillText(
+        "ĐÔNG",
+        W-25,
+        cy
+    );
+
+}
+
+
+/* =========================================================
+   MŨI TÊN TRÁI ĐẤT TỰ QUAY
+========================================================= */
+
+function drawRotationArrow(){
+
+    ctx.save();
+
+
+    ctx.strokeStyle =
+        "#087bb4";
+
+    ctx.lineWidth =
+        3;
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        cx,
+        cy,
+        R*zoom+25,
+        degToRad(220),
+        degToRad(315)
+    );
+
+    ctx.stroke();
+
+
+    let angle =
+        degToRad(315);
+
+
+    let x =
+        cx +
+        (R*zoom+25)*
+        Math.cos(angle);
+
+
+    let y =
+        cy +
+        (R*zoom+25)*
+        Math.sin(angle);
+
+
+    ctx.fillStyle =
+        "#087bb4";
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        x,
+        y
+    );
+
+    ctx.lineTo(
+        x-14,
+        y-2
+    );
+
+    ctx.lineTo(
+        x-5,
+        y-13
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.font =
+        "bold 13px Segoe UI";
+
+    ctx.fillText(
+        "Tự quay Tây → Đông",
+        cx+R*zoom*.65,
+        cy-R*zoom*.8
+    );
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   TẠO QUỸ ĐẠO
+========================================================= */
+
+
+/*
+   Hàm tạo điểm quỹ đạo.
+
+   start:
+       vĩ độ + kinh độ
+
+   dx/dy:
+       hướng ban đầu
+
+   deflection:
+       mức độ lệch
+*/
+
+
+function makeTrajectory(data){
+
+    let pointsInitial = [];
+
+    let pointsDeflected = [];
+
+
+    /*
+       xác định bán cầu
+    */
+
+    let hemisphere =
+        data.hemisphere;
+
+
+    if(
+        hemisphereSelect.value !== "auto"
+    ){
+
+        hemisphere =
+            hemisphereSelect.value;
+
+    }
+
+
+    /*
+       bên lệch
+
+       Bắc:
+          phải
+
+       Nam:
+          trái
+    */
+
+    let deflect =
+        hemisphere === "north"
+        ? 1
+        : -1;
+
+
+    /*
+       vector hướng
+    */
+
+    let dx =
+        data.dx;
+
+    let dy =
+        data.dy;
+
+
+    /*
+       vector vuông góc bên phải
+    */
+
+    let rightX =
+        -dy;
+
+    let rightY =
+        dx;
+
+
+    /*
+       quỹ đạo
+    */
+
+    for(
+        let i=0;
+        i<=100;
+        i++
+    ){
+
+        let t =
+            i/100;
+
+
+        /*
+           khoảng cách
+        */
+
+        let distance =
+            55*t;
+
+
+        /*
+           lệch tăng dần
+        */
+
+        let offset =
+            deflect*
+            18*
+            t*
+            t;
+
+
+        let lat =
+            data.lat
+            +
+            dy*
+            distance
+            +
+            rightY*
+            offset;
+
+
+        let lon =
+            data.lon
+            +
+            dx*
+            distance
+            +
+            rightX*
+            offset;
+
+
+        /*
+           hướng ban đầu
+        */
+
+        let lat0 =
+            data.lat
+            +
+            dy*
+            distance;
+
+
+        let lon0 =
+            data.lon
+            +
+            dx*
+            distance;
+
+
+        pointsInitial.push({
+            lat:lat0,
+            lon:lon0
+        });
+
+
+        pointsDeflected.push({
+            lat:lat,
+            lon:lon
+        });
+
+    }
+
+
+    return {
+
+        initial:
+        pointsInitial,
+
+        deflected:
+        pointsDeflected
+
+    };
+
+}
+
+
+/* =========================================================
+   VẼ ĐƯỜNG
+========================================================= */
+
+function drawPolyline(
+    points,
+    color,
+    dashed,
+    progressLimit=1
+){
+
+    ctx.save();
+
+
+    ctx.beginPath();
+
+
+    let started =
+        false;
+
+
+    let max =
+        Math.floor(
+            points.length*
+            progressLimit
+        );
+
+
+    for(
+        let i=0;
+        i<max;
+        i++
+    ){
+
+        let p =
+            project(
+                geoTo3D(
+                    points[i].lat,
+                    points[i].lon
+                )
+            );
+
+
+        if(
+            p.visible
+        ){
+
+            if(!started){
+
+                ctx.moveTo(
+                    p.x,
+                    p.y
+                );
+
+                started=true;
+
+            }
+            else{
+
+                ctx.lineTo(
+                    p.x,
+                    p.y
+                );
+
+            }
+
+        }
+
+    }
+
+
+    ctx.strokeStyle =
+        color;
+
+    ctx.lineWidth =
+        dashed ? 3 : 5;
+
+
+    if(dashed){
+
+        ctx.setLineDash(
+            [9,7]
+        );
+
+    }
+    else{
+
+        ctx.setLineDash([]);
+
+    }
+
+
+    ctx.stroke();
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   VẼ MŨI TÊN
+========================================================= */
+
+function drawArrowHead(
+    p1,
+    p2,
+    color
+){
+
+    let angle =
+        Math.atan2(
+            p2.y-p1.y,
+            p2.x-p1.x
+        );
+
+
+    ctx.save();
+
+
+    ctx.fillStyle =
+        color;
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        p2.x,
+        p2.y
+    );
+
+    ctx.lineTo(
+        p2.x-
+        13*
+        Math.cos(
+            angle-.45
+        ),
+
+        p2.y-
+        13*
+        Math.sin(
+            angle-.45
+        )
+    );
+
+    ctx.lineTo(
+        p2.x-
+        13*
+        Math.cos(
+            angle+.45
+        ),
+
+        p2.y-
+        13*
+        Math.sin(
+            angle+.45
+        )
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   VẼ TRƯỜNG HỢP
+========================================================= */
+
+function drawCase(
+    key,
+    showLabels=true
+){
+
+    const data =
+        cases[key];
+
+
+    const trajectory =
+        makeTrajectory(data);
+
+
+    /*
+       đường ban đầu
+    */
+
+    drawPolyline(
+        trajectory.initial,
+        "#e34444",
+        true,
+        1
+    );
+
+
+    /*
+       đường sau khi lệch
+    */
+
+    drawPolyline(
+        trajectory.deflected,
+        "#087bb4",
+        false,
+        animationProgress
+    );
+
+
+    /*
+       điểm đầu
+    */
+
+    let start =
+        project(
+            geoTo3D(
+                data.lat,
+                data.lon
+            )
+        );
+
+
+    /*
+       điểm cuối
+    */
+
+    let end =
+        trajectory.deflected[
+            trajectory.deflected.length-1
+        ];
+
+
+    let endPoint =
+        project(
+            geoTo3D(
+                end.lat,
+                end.lon
+            )
+        );
+
+
+    if(
+        start.visible
+    ){
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            start.x,
+            start.y,
+            8,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#e33d3d";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            start.x,
+            start.y,
+            5,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+
+        if(showLabels){
+
+            ctx.font =
+                "bold 17px Segoe UI";
+
+            ctx.fillStyle =
+                "#b52e2e";
+
+            ctx.fillText(
+                key[0],
+                start.x+10,
+                start.y-8
+            );
+
+        }
+
+    }
+
+
+    /*
+       mũi tên cuối đường
+    */
+
+    if(
+        endPoint.visible
+    ){
+
+        let prev =
+            trajectory.deflected[
+                trajectory.deflected.length-5
+            ];
+
+
+        let prevPoint =
+            project(
+                geoTo3D(
+                    prev.lat,
+                    prev.lon
+                )
+            );
+
+
+        drawArrowHead(
+            prevPoint,
+            endPoint,
+            "#087bb4"
+        );
+
+
+        if(showLabels){
+
+            ctx.font =
+                "bold 16px Segoe UI";
+
+            ctx.fillStyle =
+                "#087bb4";
+
+
+            /*
+               tên sau lệch
+            */
+
+            let label =
+                key[1] +
+                "'";
+
+
+            ctx.fillText(
+                label,
+                endPoint.x+8,
+                endPoint.y-7
+            );
+
+        }
+
+    }
+
+
+    /*
+       vật thể đang chuyển động
+    */
+
+    if(
+        key ===
+        caseSelect.value
+        &&
+        animationProgress>0
+        &&
+        animationProgress<1
+    ){
+
+        let index =
+            Math.floor(
+                animationProgress*
+                (trajectory.deflected.length-1)
+            );
+
+
+        let point =
+            trajectory.deflected[
+                index
+            ];
+
+
+        let projected =
+            project(
+                geoTo3D(
+                    point.lat,
+                    point.lon
+                )
+            );
+
+
+        if(projected.visible){
+
+            /* vòng sáng */
+
+            ctx.beginPath();
+
+            ctx.arc(
+                projected.x,
+                projected.y,
+                15,
+                0,
+                Math.PI*2
+            );
+
+            ctx.fillStyle =
+                "rgba(239,63,63,.20)";
+
+            ctx.fill();
+
+
+            /* vật thể */
+
+            ctx.beginPath();
+
+            ctx.arc(
+                projected.x,
+                projected.y,
+                9,
+                0,
+                Math.PI*2
+            );
+
+            ctx.fillStyle =
+                "#ef3f3f";
+
+            ctx.fill();
+
+
+            ctx.strokeStyle =
+                "#ffffff";
+
+            ctx.lineWidth =
+                3;
+
+            ctx.stroke();
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   VẼ TẤT CẢ
+========================================================= */
+
+function drawEverything(){
+
+    drawGlobe();
+
+
+    let selected =
+        caseSelect.value;
+
+
+    /*
+       chế độ ALL
+    */
+
+    if(
+        selected === "ALL"
+    ){
+
+        drawCase(
+            "AB",
+            true
+        );
+
+        drawCase(
+            "CD",
+            true
+        );
+
+        drawCase(
+            "MN",
+            true
+        );
+
+        drawCase(
+            "OP",
+            true
+        );
+
+    }
+    else{
+
+        drawCase(
+            selected,
+            true
+        );
+
+    }
+
+
+    /*
+       nếu đang chạy,
+       vẽ vật thể
+    */
+
+}
+
+
+/* =========================================================
+   CẬP NHẬT THÔNG TIN
+========================================================= */
+
+function updateInfo(){
+
+    let selected =
+        caseSelect.value;
+
+
+    if(
+        selected === "ALL"
+    ){
+
+        caseInfo.innerHTML = `
+
+        <span class="badge badge-north">
+        CHẾ ĐỘ SO SÁNH
+        </span>
+
+        <br>
+
+        Mô hình đang hiển thị đồng thời
+        <b>4 trường hợp chuyển động</b>
+        trên hai bán cầu.
+
+        <br><br>
+
+        Hãy chú ý:
+
+        <b>ở bán cầu Bắc vật thể lệch phải,
+        ở bán cầu Nam vật thể lệch trái.</b>
+
+        `;
+
+        return;
+
+    }
+
+
+    const data =
+        cases[selected];
+
+
+    let hemisphere =
+        data.hemisphere;
+
+
+    if(
+        hemisphereSelect.value !== "auto"
+    ){
+
+        hemisphere =
+            hemisphereSelect.value;
+
+    }
+
+
+    let hemiText =
+        hemisphere === "north"
+        ? "Bán cầu Bắc"
+        : "Bán cầu Nam";
+
+
+    let side =
+        hemisphere === "north"
+        ? "bên phải"
+        : "bên trái";
+
+
+    let badge =
+        hemisphere === "north"
+        ? "badge-north"
+        : "badge-south";
+
+
+    caseInfo.innerHTML = `
+
+        <span class="badge ${badge}">
+        ${hemiText}
+        </span>
+
+        <br>
+
+        <b>${data.name}</b>
+
+        <br><br>
+
+        ${data.description}
+
+        <br><br>
+
+        <b>Kết quả quan sát:</b>
+
+        vật thể có xu hướng lệch về
+        <b>${side}</b>
+        so với hướng chuyển động.
+
+    `;
+
+
+    /*
+       cập nhật màu kết luận
+    */
+
+    if(
+        hemisphere === "north"
+    ){
+
+        conclusionBox.className =
+            "conclusion north-box";
+
+    }
+    else{
+
+        conclusionBox.className =
+            "conclusion south-box";
+
+    }
+
+}
+
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+function animate(timestamp){
+
+    if(!animationRunning)
+        return;
+
+
+    if(!lastTime)
+        lastTime =
+            timestamp;
+
+
+    let delta =
+        timestamp-lastTime;
+
+
+    lastTime =
+        timestamp;
+
+
+    let speed =
+        Number(
+            speedSlider.value
+        );
+
+
+    animationProgress +=
+        delta*
+        0.00025*
+        speed;
+
+
+    if(
+        animationProgress >= 1
+    ){
+
+        animationProgress =
+            1;
+
+        animationRunning =
+            false;
+
+    }
+
+
+    if(
+        earthRotating
+    ){
+
+        rotationLon +=
+            delta*
+            0.006*
+            speed;
+
+    }
+
+
+    drawEverything();
+
+
+    if(
+        animationRunning
+        ||
+        earthRotating
+    ){
+
+        animationFrame =
+            requestAnimationFrame(
+                animate
+            );
+
+    }
+
+}
+
+
+/* =========================================================
+   BẮT ĐẦU
+========================================================= */
+
+function startAnimation(){
+
+    if(
+        animationProgress >= 1
+    ){
+
+        animationProgress =
+            0;
+
+    }
+
+
+    animationRunning =
+        true;
+
+
+    lastTime =
+        0;
+
+
+    cancelAnimationFrame(
+        animationFrame
+    );
+
+
+    animationFrame =
+        requestAnimationFrame(
+            animate
+        );
+
+}
+
+
+/* =========================================================
+   TẠM DỪNG
+========================================================= */
+
+function pauseAnimation(){
+
+    animationRunning =
+        false;
+
+    cancelAnimationFrame(
+        animationFrame
+    );
+
+}
+
+
+/* =========================================================
+   LÀM LẠI
+========================================================= */
+
+function resetAnimation(){
+
+    animationRunning =
+        false;
+
+    cancelAnimationFrame(
+        animationFrame
+    );
+
+
+    animationProgress =
+        0;
+
+
+    rotationLon =
+        0;
+
+    rotationLat =
+        0;
+
+
+    zoom =
+        1;
+
+
+    drawEverything();
+
+}
+
+
+/* =========================================================
+   TRÁI ĐẤT TỰ QUAY
+========================================================= */
+
+function toggleEarthRotation(){
+
+    earthRotating =
+        !earthRotating;
+
+
+    if(
+        earthRotating
+    ){
+
+        rotateBtn.innerHTML =
+            "⏹ DỪNG TRÁI ĐẤT TỰ QUAY";
+
+        lastTime =
+            0;
+
+        animationFrame =
+            requestAnimationFrame(
+                animate
+            );
+
+    }
+    else{
+
+        rotateBtn.innerHTML =
+            "🔄 BẬT / TẮT TRÁI ĐẤT TỰ QUAY";
+
+    }
+
+}
+
+
+/* =========================================================
+   THAY ĐỔI TRƯỜNG HỢP
+========================================================= */
+
+caseSelect.addEventListener(
+    "change",
+    function(){
+
+        animationProgress =
+            0;
+
+        updateInfo();
+
+        drawEverything();
+
+    }
+);
+
+
+/* =========================================================
+   THAY ĐỔI BÁN CẦU
+========================================================= */
+
+hemisphereSelect.addEventListener(
+    "change",
+    function(){
+
+        animationProgress =
+            0;
+
+        updateInfo();
+
+        drawEverything();
+
+    }
+);
+
+
+/* =========================================================
+   THAY ĐỔI CHẾ ĐỘ
+========================================================= */
+
+modeSelect.addEventListener(
+    "change",
+    function(){
+
+        let mode =
+            modeSelect.value;
+
+
+        if(
+            mode === "predict"
+        ){
+
+            /*
+               chỉ hiện hướng ban đầu
+            */
+
+            animationProgress =
+                0;
+
+        }
+
+
+        if(
+            mode === "compare"
+        ){
+
+            caseSelect.value =
+                "ALL";
+
+        }
+
+
+        updateInfo();
+
+        drawEverything();
+
+    }
+);
+
+
+/* =========================================================
+   TỐC ĐỘ
+========================================================= */
+
+speedSlider.addEventListener(
+    "input",
+    function(){
+
+        speedText.innerHTML =
+            this.value + "×";
+
+    }
+);
+
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+playBtn.addEventListener(
+    "click",
+    startAnimation
+);
+
+
+pauseBtn.addEventListener(
+    "click",
+    pauseAnimation
+);
+
+
+resetBtn.addEventListener(
+    "click",
+    resetAnimation
+);
+
+
+rotateBtn.addEventListener(
+    "click",
+    toggleEarthRotation
+);
+
+
+/* =========================================================
+   KÉO XOAY TRÁI ĐẤT
+========================================================= */
+
+canvas.addEventListener(
+    "mousedown",
+    function(e){
+
+        dragging =
+            true;
+
+        lastMouseX =
+            e.clientX;
+
+        lastMouseY =
+            e.clientY;
+
+        canvas.classList.add(
+            "dragging"
+        );
+
+    }
+);
+
+
+window.addEventListener(
+    "mouseup",
+    function(){
+
+        dragging =
+            false;
+
+        canvas.classList.remove(
+            "dragging"
+        );
+
+    }
+);
+
+
+window.addEventListener(
+    "mousemove",
+    function(e){
+
+        if(!dragging)
+            return;
+
+
+        let dx =
+            e.clientX-lastMouseX;
+
+
+        let dy =
+            e.clientY-lastMouseY;
+
+
+        rotationLon +=
+            dx*.35;
+
+
+        rotationLat +=
+            dy*.20;
+
+
+        rotationLat =
+            Math.max(
+                -65,
+                Math.min(
+                    65,
+                    rotationLat
+                )
+            );
+
+
+        lastMouseX =
+            e.clientX;
+
+
+        lastMouseY =
+            e.clientY;
+
+
+        drawEverything();
+
+    }
+);
+
+
+/* =========================================================
+   PHÓNG TO / THU NHỎ
+========================================================= */
+
+canvas.addEventListener(
+    "wheel",
+    function(e){
+
+        e.preventDefault();
+
+
+        if(
+            e.deltaY < 0
+        ){
+
+            zoom *=
+                1.08;
+
+        }
+        else{
+
+            zoom /=
+                1.08;
+
+        }
+
+
+        zoom =
+            Math.max(
+                .65,
+                Math.min(
+                    1.6,
+                    zoom
+                )
+            );
+
+
+        drawEverything();
+
+    },
+    {
+        passive:false
+    }
+);
+
+
+/* =========================================================
+   TOUCH – ĐIỆN THOẠI
+========================================================= */
+
+let touchX =
+    0;
+
+
+canvas.addEventListener(
+    "touchstart",
+    function(e){
+
+        if(
+            e.touches.length !== 1
+        )
+            return;
+
+
+        touchX =
+            e.touches[0].clientX;
+
+    }
+);
+
+
+canvas.addEventListener(
+    "touchmove",
+    function(e){
+
+        if(
+            e.touches.length !== 1
+        )
+            return;
+
+
+        let x =
+            e.touches[0].clientX;
+
+
+        let dx =
+            x-touchX;
+
+
+        rotationLon +=
+            dx*.35;
+
+
+        touchX =
+            x;
+
+
+        drawEverything();
+
+    }
+);
+
+
+/* =========================================================
+   KHỞI TẠO
+========================================================= */
+
+updateInfo();
+
+drawEverything();
+
+
+</script>
+
+</body>
+</html>
